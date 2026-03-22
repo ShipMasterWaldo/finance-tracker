@@ -258,14 +258,16 @@ function autoCategory(desc, type) {
 function parseBSPDate(str) {
   if (!str) return '';
   str = str.trim();
-  var parts = str.split('-');
+  var months = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+  var parts = str.split(' ');
   if (parts.length === 3) {
-    var months = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
-    if (isNaN(parts[1])) {
-      var m = months[parts[1].toUpperCase()];
-      return parts[2] + '-' + (m || '01') + '-' + parts[0].padStart(2,'0');
-    }
-    return str;
+    var m = months[parts[1].toUpperCase()];
+    return parts[2] + '-' + (m||'01') + '-' + parts[0].padStart(2,'0');
+  }
+  parts = str.split('-');
+  if (parts.length === 3 && isNaN(parts[1])) {
+    var m2 = months[parts[1].toUpperCase()];
+    return parts[2] + '-' + (m2||'01') + '-' + parts[0].padStart(2,'0');
   }
   return str;
 }
@@ -277,7 +279,12 @@ function handleCSV(input) {
   reader.onload = function(e) {
     var text = e.target.result;
     var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
-    var headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+var headerLineIdx = 0;
+for (var h = 0; h < lines.length; h++) {
+  if (lines[h].indexOf('Transaction Date') >= 0) { headerLineIdx = h; break; }
+}
+var headers = lines[headerLineIdx].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+var lines = lines.slice(headerLineIdx);
     var dateIdx = headers.indexOf('Transaction Date');
     var descIdx = headers.indexOf('Description');
     var creditIdx = headers.indexOf('CREDIT');
@@ -291,7 +298,7 @@ function handleCSV(input) {
       var cols = lines[i].split(',').map(function(c) { return c.trim().replace(/"/g,''); });
       if (cols.length < 3) continue;
       var date = parseBSPDate(cols[dateIdx]);
-      var desc = cols[descIdx] || '';
+      var desc = (cols[descIdx] || '').replace(/\|\|/g, ' ').trim();
       var credit = parseFloat(cols[creditIdx]) || 0;
       var debit = parseFloat(cols[debitIdx]) || 0;
       if (credit === 0 && debit === 0) continue;
