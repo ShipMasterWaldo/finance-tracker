@@ -57,7 +57,7 @@ html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sa
 .auth-msg{font-size:13px;margin-top:10px;text-align:center;min-height:18px}
 header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;gap:8px}
 .logo{font-size:16px;font-weight:500;display:flex;align-items:center;white-space:nowrap;flex-shrink:0;gap:8px}
-.logo img{height:28px;width:28px;object-fit:contain;border-radius:6px}
+.logo img{height:32px;width:auto;max-width:32px;object-fit:contain;border-radius:6px}
 .logo span{color:var(--green)}
 .hright{display:flex;align-items:center;gap:8px;flex-shrink:0}
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:var(--transition)}
@@ -167,12 +167,28 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
 .export-preview-table tr:last-child td{border-bottom:none}
 .export-stat{display:inline-block;background:var(--bg2);border-radius:var(--r);padding:8px 14px;font-size:13px;margin-right:8px;margin-bottom:8px}
 .export-stat span{font-weight:500;color:var(--text)}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:0.5px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom)}
+.bottom-nav-inner{display:flex;align-items:center;justify-content:space-around;height:52px}
+.bnb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1;border:none;background:none;cursor:pointer;padding:6px 4px;color:var(--text3);font-family:inherit;transition:var(--transition)}
+.bnb.active{color:var(--green)}
+.bnb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bnb span{font-size:10px;font-weight:500;letter-spacing:.01em}
+.more-overlay{display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,0.25)}
+.more-overlay.open{display:block}
+.more-menu{position:fixed;bottom:-300px;left:0;right:0;z-index:199;background:var(--bg);border-top:0.5px solid var(--border);border-radius:16px 16px 0 0;transition:bottom 0.25s ease;padding-bottom:env(safe-area-inset-bottom)}
+.more-menu.open{bottom:52px}
+.more-menu-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 6px}
+.more-menu-item{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:0.5px solid var(--border);cursor:pointer;font-size:14px;color:var(--text);transition:var(--transition)}
+.more-menu-item:last-child{border-bottom:none}
+.more-menu-item svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--text2);flex-shrink:0}
 @media(max-width:640px){
   .cgrid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metric{padding:12px}.mv{font-size:20px}
-  .fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:12px}
-  .logo{font-size:13px}.logo img{height:22px;width:22px}.sync-label{display:none}
-  header{padding:0 12px}.recon-summary{grid-template-columns:1fr 1fr}
+  .fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:12px;padding-bottom:72px}
+  .logo{font-size:15px}.logo img{height:26px;width:auto;max-width:26px}.sync-label{display:none}
+  header{padding:0 16px;height:52px}.recon-summary{grid-template-columns:1fr 1fr}
   .dash-header{flex-direction:column;align-items:flex-start}.cc{padding:14px}.fc{padding:16px}
+  nav{display:none}
+  .bottom-nav{display:block}
 }
 </style>
 </head>
@@ -410,6 +426,46 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
       </div>
 
     </main>
+    <div class="more-overlay" id="more-overlay" onclick="closeMore()"></div>
+    <div class="more-menu" id="more-menu">
+      <div class="more-menu-handle"></div>
+      <div class="more-menu-item" onclick="stMobile('import')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Import CSV
+      </div>
+      <div class="more-menu-item" onclick="stMobile('reconcile')">
+        <svg viewBox="0 0 24 24"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Reconcile
+      </div>
+      <div class="more-menu-item" onclick="stMobile('budgets')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Budgets
+      </div>
+      <div class="more-menu-item" onclick="stMobile('export')">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        Export
+      </div>
+    </div>
+    <div class="bottom-nav">
+      <div class="bottom-nav-inner">
+        <button class="bnb active" id="bnb-dashboard" onclick="stMobile('dashboard')">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+          <span>Dashboard</span>
+        </button>
+        <button class="bnb" id="bnb-add" onclick="stMobile('add')">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+          <span>Add</span>
+        </button>
+        <button class="bnb" id="bnb-transactions" onclick="stMobile('transactions')">
+          <svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+          <span>Transactions</span>
+        </button>
+        <button class="bnb" id="bnb-more" onclick="toggleMore()">
+          <svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/></svg>
+          <span>More</span>
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -1075,6 +1131,45 @@ if ('serviceWorker' in navigator) {
       .then(function(reg) { console.log('SW registered'); })
       .catch(function(err) { console.log('SW failed', err); });
   });
+}
+
+function stMobile(tab) {
+  closeMore();
+  st(tab);
+  var map = {dashboard:'bnb-dashboard', add:'bnb-add', transactions:'bnb-transactions'};
+  var allBnbs = ['bnb-dashboard','bnb-add','bnb-transactions','bnb-more'];
+  for (var i = 0; i < allBnbs.length; i++) {
+    var b = document.getElementById(allBnbs[i]);
+    if (b) b.className = 'bnb';
+  }
+  var moreItems = ['import','reconcile','budgets','export'];
+  if (map[tab]) {
+    var active = document.getElementById(map[tab]);
+    if (active) active.className = 'bnb active';
+  } else if (moreItems.indexOf(tab) >= 0) {
+    var moreBtn = document.getElementById('bnb-more');
+    if (moreBtn) moreBtn.className = 'bnb active';
+  }
+}
+
+function toggleMore() {
+  var menu = document.getElementById('more-menu');
+  var overlay = document.getElementById('more-overlay');
+  var isOpen = menu.classList.contains('open');
+  if (isOpen) {
+    menu.classList.remove('open');
+    overlay.classList.remove('open');
+  } else {
+    menu.classList.add('open');
+    overlay.classList.add('open');
+  }
+}
+
+function closeMore() {
+  var menu = document.getElementById('more-menu');
+  var overlay = document.getElementById('more-overlay');
+  if (menu) menu.classList.remove('open');
+  if (overlay) overlay.classList.remove('open');
 }
 
 sb.auth.onAuthStateChange(function(event, session) {
