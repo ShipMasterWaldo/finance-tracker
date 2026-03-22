@@ -380,6 +380,7 @@ function runReconciliation(csvRows, closingBalance) {
     return t.type === 'income' ? s + t.amount : s - t.amount;
   }, 0);
 
+  reconRows = missingFromTracker;
   var el = document.getElementById('recon-results');
 
   var balOk = Math.abs(trackerBankTotal - closingBalance) < 0.05;
@@ -398,12 +399,11 @@ function runReconciliation(csvRows, closingBalance) {
   var missingHtml = '';
   if (missingFromTracker.length) {
     var missingRows = missingFromTracker.map(function(r, i) {
-      var ac = autoCategory(r.desc, r.type);
       return '<tr><td style="color:var(--text2)">' + r.date + '</td>' +
         '<td style="color:var(--text2)">' + r.desc + '</td>' +
         '<td><span class="badge ' + r.type + '">' + r.type + '</span></td>' +
         '<td style="text-align:right" class="amt ' + r.type + '">' + (r.type==='income'?'+':'-') + fmt(r.amount) + '</td>' +
-        '<td><button class="btn-sm" onclick="importSingle(' + JSON.stringify({id:String(Date.now())+i,date:r.date,desc:r.desc,type:r.type,amount:r.amount,category:ac.cat,subcategory:ac.sub,method:\'bank\'}).replace(/"/g,"'") + ')">Add</button></td></tr>';
+        '<td><button class="btn-sm" onclick="importSingleRow('+i+')">Add</button></td></tr>';
     }).join('');
     missingHtml = '<div class="recon-section"><div class="recon-section-header"><span class="recon-section-title missing">Missing from your tracker</span><span class="recon-badge missing">' + missingFromTracker.length + '</span></div>' +
       '<div style="overflow-x:auto"><table><thead><tr><th style="width:100px">Date</th><th>Description</th><th style="width:90px">Type</th><th style="width:100px;text-align:right">Amount</th><th style="width:60px"></th></tr></thead><tbody>' + missingRows + '</tbody></table></div></div>';
@@ -437,20 +437,32 @@ function runReconciliation(csvRows, closingBalance) {
   el.innerHTML = balHtml + summaryHtml + missingHtml + notInBankHtml + matchedHtml;
 }
 
-function importSingle(t) {
-  t.id = String(Date.now());
-  setSyncStatus('loading','Saving...');
+var reconRows = [];
+
+function importSingleRow(i) {
+  var r = reconRows[i];
+  if (!r) return;
+  var ac = autoCategory(r.desc, r.type);
+  var t = {
+    id: String(Date.now()),
+    date: r.date,
+    desc: r.desc,
+    type: r.type,
+    amount: r.amount,
+    category: ac.cat,
+    subcategory: ac.sub,
+    method: 'bank'
+  };
+  setSyncStatus('loading', 'Saving...');
   fetch(API, {method:'POST', body:JSON.stringify({action:'add', transaction:t})})
     .then(function(r){return r.json();})
     .then(function(j){
-      if(j.ok){
+      if (j.ok) {
         txns.push(t);
         setSyncStatus('ok','Synced');
         pms(); rd();
-        var btn = event.target;
-        btn.textContent = 'Added';
-        btn.disabled = true;
-        btn.style.background = 'var(--green)';
+        var btn = document.querySelectorAll('.btn-sm')[i];
+        if (btn) { btn.textContent='Added'; btn.disabled=true; btn.style.background='var(--green)'; }
       } else { setSyncStatus('err','Error'); }
     })
     .catch(function(){ setSyncStatus('err','Offline'); });
