@@ -305,6 +305,11 @@ var lines = lines.slice(headerLineIdx);
       var type = credit > 0 ? 'income' : 'expense';
       var amount = credit > 0 ? credit : debit;
       var ac = autoCategory(desc, type);
+      var isDuplicate = txns.some(function(existing) {
+        return existing.date === date &&
+          parseFloat(existing.amount) === amount &&
+          existing.type === type;
+      });
       importedRows.push({
         id: String(Date.now()) + String(i),
         date: date,
@@ -314,7 +319,8 @@ var lines = lines.slice(headerLineIdx);
         category: ac.cat,
         subcategory: ac.sub,
         method: 'bank',
-        skip: false
+        skip: isDuplicate,
+        duplicate: isDuplicate
       });
     }
     renderPreview();
@@ -331,7 +337,7 @@ function renderPreview() {
     var cats = r.type === 'income' ? incCats : expCats;
     var catOpts = cats.map(function(c) { return '<option value="' + c + '"' + (c === r.category ? ' selected' : '') + '>' + c + '</option>'; }).join('');
     var typeOpts = '<option value="expense"' + (r.type==='expense'?' selected':'') + '>Expense</option><option value="income"' + (r.type==='income'?' selected':'') + '>Income</option>';
-    return '<tr class="' + (r.skip ? 'skip-row' : '') + '" id="irow-' + i + '">' +
+    return '<tr class="' + (r.skip ? 'skip-row' : '') + '" id="irow-' + i + '" style="' + (r.duplicate ? 'background:var(--amb-bg)' : '') + '">' +
       '<td><input type="checkbox"' + (!r.skip ? ' checked' : '') + ' onchange="toggleSkip(' + i + ',this.checked)" style="width:auto;padding:0"></td>' +
       '<td>' + r.date + '</td>' +
       '<td style="color:var(--text2)">' + r.desc + '</td>' +
@@ -341,8 +347,10 @@ function renderPreview() {
       '</tr>';
   }).join('');
   var active = importedRows.filter(function(r) { return !r.skip; }).length;
+  var dupeCount = importedRows.filter(function(r) { return r.duplicate; }).length;
   el.innerHTML = '<div style="overflow-x:auto"><table class="preview-table"><thead><tr><th style="width:36px"></th><th style="width:90px">Date</th><th>Description</th><th style="width:90px">Type</th><th style="width:130px">Category</th><th style="width:90px;text-align:right">Amount</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
-    '<div class="import-actions"><button class="btn" onclick="confirmImport()" id="import-btn">Import ' + active + ' transactions</button><button class="btn-ghost" onclick="resetImport()">Cancel</button><span class="import-summary" id="import-summary"></span></div>';
+    '<div class="import-actions"><button class="btn" onclick="confirmImport()" id="import-btn">Import ' + active + ' transactions</button><button class="btn-ghost" onclick="resetImport()">Cancel</button><span class="import-summary" id="import-summary"></span></div>' +
+(dupeCount > 0 ? '<p style="font-size:12px;color:var(--amb-t);margin-top:10px">' + dupeCount + ' likely duplicate(s) highlighted in amber and unchecked — tick them if you want to import anyway.</p>' : '')
 }
 
 function toggleSkip(i, checked) {
