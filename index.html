@@ -4,9 +4,10 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="FinTracker">
-<meta name="theme-color" content="#1D9E5B">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1a1a18" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="logo.png">
 <title>My Financial Tracker</title>
@@ -167,8 +168,8 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
 .export-preview-table tr:last-child td{border-bottom:none}
 .export-stat{display:inline-block;background:var(--bg2);border-radius:var(--r);padding:8px 14px;font-size:13px;margin-right:8px;margin-bottom:8px}
 .export-stat span{font-weight:500;color:var(--text)}
-.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:0.5px solid var(--border);z-index:200;padding-bottom:env(safe-area-inset-bottom)}
-.bottom-nav-inner{display:flex;align-items:center;justify-content:space-around;height:52px}
+.bottom-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--bg);border-top:0.5px solid var(--border);z-index:200;padding-bottom:max(env(safe-area-inset-bottom), 16px)}
+.bottom-nav-inner{display:flex;align-items:center;justify-content:space-around;height:58px}
 .bnb{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:1;border:none;background:none;cursor:pointer;padding:6px 4px;color:var(--text3);font-family:inherit;transition:var(--transition)}
 .bnb.active{color:var(--green)}
 .bnb svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -176,14 +177,14 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
 .more-overlay{display:none;position:fixed;inset:0;z-index:198;background:rgba(0,0,0,0.25)}
 .more-overlay.open{display:block}
 .more-menu{position:fixed;bottom:-300px;left:0;right:0;z-index:199;background:var(--bg);border-top:0.5px solid var(--border);border-radius:16px 16px 0 0;transition:bottom 0.25s ease;padding-bottom:env(safe-area-inset-bottom)}
-.more-menu.open{bottom:52px}
+.more-menu.open{bottom:calc(58px + max(env(safe-area-inset-bottom), 16px))}
 .more-menu-handle{width:36px;height:4px;background:var(--border2);border-radius:2px;margin:10px auto 6px}
 .more-menu-item{display:flex;align-items:center;gap:12px;padding:13px 20px;border-bottom:0.5px solid var(--border);cursor:pointer;font-size:14px;color:var(--text);transition:var(--transition)}
 .more-menu-item:last-child{border-bottom:none}
 .more-menu-item svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--text2);flex-shrink:0}
 @media(max-width:640px){
   .cgrid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metric{padding:12px}.mv{font-size:20px}
-  .fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:12px;padding-bottom:72px}
+  .fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:12px;padding-bottom:90px}
   .logo{font-size:15px}.logo img{height:26px;width:auto;max-width:26px}.sync-label{display:none}
   header{padding:0 16px;height:52px}.recon-summary{grid-template-columns:1fr 1fr}
   .dash-header{flex-direction:column;align-items:flex-start}.cc{padding:14px}.fc{padding:16px}
