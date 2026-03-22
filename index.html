@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <title>My Financial Tracker</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -10,7 +12,7 @@
 :root{
   --bg:#fff;--bg2:#f5f5f3;--bg3:#efefec;--text:#1a1a18;--text2:#6b6b67;--text3:#9b9b97;
   --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.22);--r:8px;--rl:12px;
-  --green:#1D9E75;--green-bg:#E1F5EE;--green-t:#0F6E56;
+  --green:#1D9E5B;--green-bg:#E1F5EE;--green-t:#0F6E56;
   --red:#D85A30;--red-bg:#FAECE7;--red-t:#993C1D;
   --blue:#185FA5;--blue-bg:#E6F1FB;--blue-t:#0C447C;
   --amb:#BA7517;--amb-bg:#FAEEDA;--amb-t:#854F0B;
@@ -143,7 +145,7 @@ tbody tr:hover{background:var(--bg2)}
 <body>
 <div class="app">
 <header>
-  <div class="logo">My <span>finance</span> tracker</div>
+  <div class="logo"><img src="logo.png" style="height:28px;width:28px;object-fit:contain;vertical-align:middle;margin-right:8px;border-radius:6px;">My <span>Financial</span> Tracker</div>
   <div class="hright">
     <div class="sync-dot loading" id="sdot"></div>
     <span class="sync-label" id="slabel">Connecting...</span>
@@ -170,7 +172,7 @@ tbody tr:hover{background:var(--bg2)}
     <div class="cc">
       <div class="ct">Income vs expenses</div>
       <div class="leg">
-        <div class="li"><div class="sw" style="background:#1D9E75"></div>Income</div>
+        <div class="li"><div class="sw" style="background:#1D9E5B"></div>Income</div>
         <div class="li"><div class="sw" style="background:#D85A30"></div>Expenses</div>
       </div>
       <div class="cw" style="height:200px"><canvas id="bc"></canvas></div>
@@ -234,7 +236,7 @@ tbody tr:hover{background:var(--bg2)}
     <div class="cc full">
       <div class="ct">Monthly breakdown</div>
       <div class="leg">
-        <div class="li"><div class="sw" style="background:#1D9E75"></div>Income</div>
+        <div class="li"><div class="sw" style="background:#1D9E5B"></div>Income</div>
         <div class="li"><div class="sw" style="background:#D85A30"></div>Expenses</div>
         <div class="li"><div class="sw" style="background:#3266ad"></div>Net</div>
       </div>
@@ -304,7 +306,7 @@ var CATS = {
   }
 };
 
-var PC = ['#3266ad','#1D9E75','#D85A30','#BA7517','#534AB7','#D4537E','#639922','#E24B4A','#888780','#5DCAA5'];
+var PC = ['#3266ad','#1D9E5B','#D85A30','#BA7517','#534AB7','#D4537E','#639922','#E24B4A','#888780','#5DCAA5'];
 var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var txns = [];
 var bC, pC, lC, yrB, yrP;
@@ -907,7 +909,7 @@ function rd() {
   bC = new Chart(document.getElementById('bc'), {
     type: 'bar',
     data: {labels:bL, datasets:[
-      {label:'Income', data:bI, backgroundColor:'#1D9E75', borderRadius:4},
+      {label:'Income', data:bI, backgroundColor:'#1D9E5B', borderRadius:4},
       {label:'Expenses', data:bE, backgroundColor:'#D85A30', borderRadius:4}
     ]},
     options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
@@ -989,7 +991,7 @@ function ry() {
   yrB = new Chart(document.getElementById('yr-bar'), {
     type: 'bar',
     data: {labels:MONTHS, datasets:[
-      {label:'Income', data:mInc, backgroundColor:'#1D9E75', borderRadius:3},
+      {label:'Income', data:mInc, backgroundColor:'#1D9E5B', borderRadius:3},
       {label:'Expenses', data:mExp, backgroundColor:'#D85A30', borderRadius:3},
       {label:'Net', data:mNet, type:'line', borderColor:'#3266ad', backgroundColor:'transparent', tension:.3, pointRadius:3, pointBackgroundColor:'#3266ad'}
     ]},
