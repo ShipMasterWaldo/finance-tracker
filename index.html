@@ -158,6 +158,20 @@ tbody tr:hover{background:var(--bg2)}
 .cat-table tr:last-child td{border-bottom:none}
 .cat-table tbody tr{transition:background 0.15s ease}
 .cat-table tbody tr:hover{background:var(--bg2)}
+.budget-row{margin-bottom:12px}
+.budget-row-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px}
+.budget-row-label{font-size:13px;font-weight:500;color:var(--text)}
+.budget-row-amounts{font-size:12px;color:var(--text2)}
+.budget-bar-bg{height:6px;background:var(--bg2);border-radius:3px;overflow:hidden}
+.budget-bar-fill{height:6px;border-radius:3px;transition:width 0.4s ease}
+.budget-status{font-size:11px;margin-top:3px;font-weight:500}
+.budget-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:0.5px solid var(--border);gap:12px}
+.budget-input-row:last-child{border-bottom:none}
+.budget-input-label{font-size:14px;color:var(--text);flex:1}
+.budget-input-wrap{display:flex;align-items:center;gap:6px}
+.budget-input-wrap span{font-size:13px;color:var(--text2)}
+.budget-input-wrap input{width:100px;text-align:right}
+.budget-section-title{font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 8px}
 
 @media(max-width:640px){
   .cgrid{grid-template-columns:1fr}
@@ -196,6 +210,7 @@ tbody tr:hover{background:var(--bg2)}
   <button class="nb" onclick="st('transactions')">Transactions</button>
   <button class="nb" onclick="st('import')">Import CSV</button>
   <button class="nb" onclick="st('reconcile')">Reconcile</button>
+  <button class="nb" onclick="st('budgets')">Budgets</button>
 </nav>
 <main>
 
@@ -241,6 +256,7 @@ tbody tr:hover{background:var(--bg2)}
         <div class="ct">Monthly net trend</div>
         <div class="cw" style="height:160px"><canvas id="lc"></canvas></div>
       </div>
+      <div id="budget-progress" style="margin-top:4px"></div>
     </div>
   </div>
 
@@ -328,6 +344,16 @@ tbody tr:hover{background:var(--bg2)}
     </div>
   </div>
   <div id="recon-results"></div>
+</div>
+
+<div id="budgets" class="sec">
+  <p class="sh">Monthly budgets</p>
+  <div class="fc" style="max-width:700px">
+    <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Set monthly spending limits for each category. Progress is shown on your dashboard.</p>
+    <div id="budget-form"></div>
+    <button class="btn" onclick="saveBudgets()" style="margin-top:20px">Save budgets</button>
+    <div class="smsg" id="budget-msg"></div>
+  </div>
 </div>
 
 </main>
@@ -748,7 +774,7 @@ function populateYears() {
 function omc() { rd(); }
 
 function st(tab) {
-  var tabs = ['dashboard','add','transactions','import','reconcile'];
+  var tabs = ['dashboard','add','transactions','import','reconcile','budgets'];
   var btns = document.querySelectorAll('.nb');
   for (var i = 0; i < btns.length; i++) btns[i].classList.toggle('active', tabs[i] === tab);
   var secs = document.querySelectorAll('.sec');
@@ -756,6 +782,7 @@ function st(tab) {
   document.getElementById(tab).classList.add('active');
   if (tab === 'dashboard') rd();
   if (tab === 'transactions') { pms(); rt(); }
+  if (tab === 'budgets') { renderBudgetForm(); }
 }
 
 function uc() {
@@ -900,6 +927,7 @@ function rd() {
     data: {labels:lL, datasets:[{label:'Net', data:lN, borderColor:'#3266ad', backgroundColor:'rgba(50,102,173,0.07)', tension:.35, fill:true, pointRadius:4, pointBackgroundColor:'#3266ad'}]},
     options: {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}, ticks:{font:{size:11}}}, y:{ticks:{callback:function(v){return (v<0?'-':'')+'K'+Math.abs(v).toLocaleString();}, font:{size:11}}, grid:{color:'rgba(128,128,128,0.1)'}}}}
   });
+  renderBudgetProgress();
 }
 
 function ry() {
@@ -958,8 +986,81 @@ function ry() {
   catEl.innerHTML = '<table class="cat-table"><thead><tr><th>Category</th><th style="text-align:right">Total</th><th style="text-align:right">Share</th></tr></thead><tbody>' + trows + '</tbody></table>';
 }
 
+var budgets = JSON.parse(localStorage.getItem('ft_budgets') || '{}');
+
+function saveBudgets() {
+  var inputs = document.querySelectorAll('.budget-input');
+  for (var i = 0; i < inputs.length; i++) {
+    var cat = inputs[i].getAttribute('data-cat');
+    var val = parseFloat(inputs[i].value) || 0;
+    if (val > 0) budgets[cat] = val;
+    else delete budgets[cat];
+  }
+  localStorage.setItem('ft_budgets', JSON.stringify(budgets));
+  var msg = document.getElementById('budget-msg');
+  msg.style.color = 'var(--green)';
+  msg.textContent = 'Budgets saved!';
+  setTimeout(function() { msg.textContent = ''; }, 2000);
+  renderBudgetProgress();
+}
+
+function renderBudgetForm() {
+  var cats = Object.keys(CATS.expense);
+  var html = '';
+  for (var i = 0; i < cats.length; i++) {
+    var cat = cats[i];
+    var val = budgets[cat] || '';
+    html += '<div class="budget-input-row">' +
+      '<span class="budget-input-label">' + cat + '</span>' +
+      '<div class="budget-input-wrap">' +
+      '<span>K</span>' +
+      '<input type="number" class="budget-input" data-cat="' + cat + '" value="' + val + '" min="0" step="1" placeholder="0">' +
+      '</div></div>';
+  }
+  var el = document.getElementById('budget-form');
+  if (el) el.innerHTML = html;
+}
+
+function renderBudgetProgress() {
+  var el = document.getElementById('budget-progress');
+  if (!el) return;
+  var month = (document.getElementById('gm') || {}).value || '';
+  if (!month) return;
+  var cats = Object.keys(budgets);
+  if (!cats.length) { el.innerHTML = ''; return; }
+  var spent = {};
+  for (var i = 0; i < txns.length; i++) {
+    var t = txns[i];
+    if (t.type === 'expense' && t.date.indexOf(month) === 0) {
+      spent[t.category] = (spent[t.category] || 0) + t.amount;
+    }
+  }
+  var html = '<div class="cc full" style="margin-bottom:20px"><div class="ct">Budget progress — ' + fmtMonth(month) + '</div>';
+  for (var j = 0; j < cats.length; j++) {
+    var cat = cats[j];
+    var budget = budgets[cat];
+    var used = spent[cat] || 0;
+    var pct = Math.min((used / budget) * 100, 100);
+    var rawPct = (used / budget) * 100;
+    var barColor = rawPct >= 100 ? 'var(--red)' : rawPct >= 80 ? 'var(--amb)' : 'var(--green)';
+    var statusText = rawPct >= 100 ? 'Over budget by ' + fmt(used - budget) : rawPct >= 80 ? 'Getting close — ' + fmt(budget - used) + ' remaining' : fmt(budget - used) + ' remaining';
+    var statusColor = rawPct >= 100 ? 'var(--red)' : rawPct >= 80 ? 'var(--amb)' : 'var(--text3)';
+    html += '<div class="budget-row">' +
+      '<div class="budget-row-header">' +
+      '<span class="budget-row-label">' + cat + '</span>' +
+      '<span class="budget-row-amounts">' + fmt(used) + ' / ' + fmt(budget) + '</span>' +
+      '</div>' +
+      '<div class="budget-bar-bg"><div class="budget-bar-fill" style="width:' + pct + '%;background:' + barColor + '"></div></div>' +
+      '<div class="budget-status" style="color:' + statusColor + '">' + statusText + '</div>' +
+      '</div>';
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
 document.getElementById('fd').value = new Date().toISOString().slice(0,10);
 uc(); pms(); populateYears(); loadFromSheets();
+renderBudgetForm();
 </script>
 </body>
 </html>
