@@ -18,8 +18,8 @@ header{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 24
 .sync-dot.ok{background:var(--green)}.sync-dot.err{background:var(--red)}.sync-dot.loading{background:#BA7517}
 .sync-label{font-size:12px;color:var(--text2)}
 header select{font-size:13px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--r);padding:5px 10px;color:var(--text)}
-nav{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 24px;display:flex;gap:4px}
-.nb{padding:12px 16px;font-size:14px;border:none;background:none;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px}
+nav{background:var(--bg);border-bottom:0.5px solid var(--border);padding:0 24px;display:flex;gap:4px;overflow-x:auto}
+.nb{padding:12px 16px;font-size:14px;border:none;background:none;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap}
 .nb.active{color:var(--text);border-bottom-color:var(--text);font-weight:500}
 main{flex:1;padding:24px;max-width:1100px;margin:0 auto;width:100%}
 .sec{display:none}.sec.active{display:block}
@@ -45,6 +45,8 @@ input,select,textarea{background:var(--bg2);border:0.5px solid var(--border2);bo
 input:focus,select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(24,95,165,.15)}
 .btn{padding:9px 20px;border-radius:var(--r);border:none;background:var(--text);color:var(--bg);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
 .btn:hover{opacity:.85}.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn-ghost{background:transparent;color:var(--text);border:0.5px solid var(--border2);padding:9px 20px;border-radius:var(--r);font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-ghost:hover{background:var(--bg2)}
 .smsg{font-size:13px;margin-top:10px;min-height:18px}
 .th{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
 .filt{display:flex;gap:8px;flex-wrap:wrap}
@@ -75,7 +77,19 @@ tbody tr:hover{background:var(--bg2)}
 .cat-table td,.cat-table th{padding:10px 14px;border-bottom:0.5px solid var(--border);text-align:left}
 .cat-table th{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);background:var(--bg2)}
 .cat-table tr:last-child td{border-bottom:none}
-@media(max-width:640px){.cgrid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:16px}nav{overflow-x:auto}thead th,tbody td{padding:8px}}
+.upload-zone{border:2px dashed var(--border2);border-radius:var(--rl);padding:40px;text-align:center;cursor:pointer;margin-bottom:20px;transition:background .2s}
+.upload-zone:hover{background:var(--bg2)}
+.upload-zone p{font-size:14px;color:var(--text2);margin-top:8px}
+.upload-zone .uz-title{font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px}
+.preview-table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+.preview-table th{background:var(--bg2);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);padding:8px 10px;text-align:left;border-bottom:0.5px solid var(--border)}
+.preview-table td{padding:8px 10px;border-bottom:0.5px solid var(--border);color:var(--text);word-break:break-word}
+.preview-table td select{font-size:12px;padding:4px 6px;background:var(--bg2)}
+.preview-table tr:last-child td{border-bottom:none}
+.preview-table tr.skip-row{opacity:.4}
+.import-actions{display:flex;align-items:center;gap:12px;margin-top:16px;flex-wrap:wrap}
+.import-summary{font-size:13px;color:var(--text2)}
+@media(max-width:640px){.cgrid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}.fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:16px}thead th,tbody td{padding:8px}}
 </style>
 </head>
 <body>
@@ -93,6 +107,7 @@ tbody tr:hover{background:var(--bg2)}
   <button class="nb" onclick="st('add')">Add transaction</button>
   <button class="nb" onclick="st('transactions')">Transactions</button>
   <button class="nb" onclick="st('yearly')">Yearly overview</button>
+  <button class="nb" onclick="st('import')">Import CSV</button>
 </nav>
 <main>
   <div id="dashboard" class="sec active">
@@ -118,6 +133,7 @@ tbody tr:hover{background:var(--bg2)}
       </div>
     </div>
   </div>
+
   <div id="add" class="sec">
     <p class="sh">Add a transaction</p>
     <div class="fc">
@@ -134,6 +150,7 @@ tbody tr:hover{background:var(--bg2)}
       <div class="smsg" id="amsg"></div>
     </div>
   </div>
+
   <div id="transactions" class="sec">
     <div class="th">
       <p class="sh" style="margin:0">All transactions</p>
@@ -145,6 +162,7 @@ tbody tr:hover{background:var(--bg2)}
     </div>
     <div class="tw" id="tl"><div class="loading-overlay"><span class="spinner"></span>Loading...</div></div>
   </div>
+
   <div id="yearly" class="sec">
     <div class="yr-select">
       <label>Year</label>
@@ -172,6 +190,19 @@ tbody tr:hover{background:var(--bg2)}
       </div>
     </div>
   </div>
+
+  <div id="import" class="sec">
+    <p class="sh">Import BSP CSV statement</p>
+    <div class="fc" style="max-width:100%">
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('csv-file').click()">
+        <div class="uz-title">Click to select your BSP CSV file</div>
+        <p>Transaction Date, Value Date, Description, Reference Number, Currency, CREDIT, DEBIT, Currency, Balance</p>
+        <input type="file" id="csv-file" accept=".csv" style="display:none" onchange="handleCSV(this)">
+      </div>
+      <div id="import-preview"></div>
+    </div>
+  </div>
+
 </main>
 </div>
 <script>
@@ -186,12 +217,14 @@ var CATS = {
     'Health': ['Doctor','Pharmacy','Gym','Insurance','Other'],
     'Entertainment': ['Streaming','Cinema','Events','Hobbies','Other'],
     'Shopping': ['Clothing','Electronics','Home','Personal care','Other'],
+    'Fees': ['Bank fee','Transfer fee','ATM fee','Other'],
     'Other': ['Miscellaneous']
   },
   income: {
     'Salary': ['Monthly salary','Bonus','Commission','Other'],
     'Freelance': ['Contract work','Consulting','Other'],
     'Investments': ['Dividends','Capital gains','Interest','Other'],
+    'Transfer': ['MB transfer','Bank transfer','Other'],
     'Other income': ['Gift','Side hustle','Other']
   }
 };
@@ -199,15 +232,177 @@ var PC = ['#3266ad','#1D9E75','#D85A30','#BA7517','#534AB7','#D4537E','#639922',
 var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 var txns = [];
 var bC, pC, lC, yrB, yrP;
+var importedRows = [];
 
-function fmt(n) {
-  return 'K' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+function autoCategory(desc, type) {
+  var d = desc.toLowerCase();
+  if (type === 'income') {
+    if (d.indexOf('salary') >= 0 || d.indexOf('fokal') >= 0 || d.indexOf('payroll') >= 0) return {cat:'Salary', sub:'Monthly salary'};
+    if (d.indexOf('interest') >= 0) return {cat:'Investments', sub:'Interest'};
+    if (d.indexOf('mb transfer') >= 0 || d.indexOf('transfer from') >= 0) return {cat:'Transfer', sub:'MB transfer'};
+    return {cat:'Other income', sub:'Other'};
+  }
+  if (d.indexOf('vodafone') >= 0 || d.indexOf('digicel') >= 0 || d.indexOf('top up') >= 0) return {cat:'Utilities', sub:'Phone'};
+  if (d.indexOf('mobile top-up fee') >= 0 || d.indexOf('merchant purchase fee') >= 0 || d.indexOf('atm cash withdrawal fee') >= 0 || d.indexOf('funds transfer') >= 0 && d.indexOf('fee') >= 0) return {cat:'Fees', sub:'Bank fee'};
+  if (d.indexOf('atm cash withdrawal') >= 0) return {cat:'Other', sub:'Miscellaneous'};
+  if (d.indexOf('grocery') >= 0 || d.indexOf('supermarket') >= 0 || d.indexOf('stop n shop') >= 0 || d.indexOf('rh') >= 0) return {cat:'Groceries', sub:'Supermarket'};
+  if (d.indexOf('restaurant') >= 0 || d.indexOf('coffee') >= 0 || d.indexOf('cafe') >= 0 || d.indexOf('food') >= 0 || d.indexOf('kitchen') >= 0) return {cat:'Dining out', sub:'Restaurants'};
+  if (d.indexOf('fuel') >= 0 || d.indexOf('petrol') >= 0 || d.indexOf('taxi') >= 0 || d.indexOf('uber') >= 0) return {cat:'Transport', sub:'Fuel'};
+  if (d.indexOf('pharmacy') >= 0 || d.indexOf('hospital') >= 0 || d.indexOf('clinic') >= 0 || d.indexOf('doctor') >= 0) return {cat:'Health', sub:'Doctor'};
+  if (d.indexOf('netflix') >= 0 || d.indexOf('spotify') >= 0 || d.indexOf('filmy') >= 0 || d.indexOf('milanote') >= 0 || d.indexOf('streaming') >= 0) return {cat:'Entertainment', sub:'Streaming'};
+  if (d.indexOf('merchant purchase') >= 0) return {cat:'Shopping', sub:'Other'};
+  if (d.indexOf('fundrais') >= 0 || d.indexOf('pev') >= 0) return {cat:'Other', sub:'Miscellaneous'};
+  return {cat:'Other', sub:'Miscellaneous'};
 }
 
-function setSyncStatus(s, m) {
-  document.getElementById('sdot').className = 'sync-dot ' + s;
-  document.getElementById('slabel').textContent = m;
+function parseBSPDate(str) {
+  if (!str) return '';
+  str = str.trim();
+  var parts = str.split('-');
+  if (parts.length === 3) {
+    var months = {JAN:'01',FEB:'02',MAR:'03',APR:'04',MAY:'05',JUN:'06',JUL:'07',AUG:'08',SEP:'09',OCT:'10',NOV:'11',DEC:'12'};
+    if (isNaN(parts[1])) {
+      var m = months[parts[1].toUpperCase()];
+      return parts[2] + '-' + (m || '01') + '-' + parts[0].padStart(2,'0');
+    }
+    return str;
+  }
+  return str;
 }
+
+function handleCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    var lines = text.split('\n').map(function(l) { return l.trim(); }).filter(function(l) { return l.length > 0; });
+    var headers = lines[0].split(',').map(function(h) { return h.trim().replace(/"/g,''); });
+    var dateIdx = headers.indexOf('Transaction Date');
+    var descIdx = headers.indexOf('Description');
+    var creditIdx = headers.indexOf('CREDIT');
+    var debitIdx = headers.indexOf('DEBIT');
+    if (dateIdx < 0 || descIdx < 0) {
+      document.getElementById('import-preview').innerHTML = '<p style="color:var(--red);font-size:13px;margin-top:12px">Could not find expected columns. Please check the CSV format.</p>';
+      return;
+    }
+    importedRows = [];
+    for (var i = 1; i < lines.length; i++) {
+      var cols = lines[i].split(',').map(function(c) { return c.trim().replace(/"/g,''); });
+      if (cols.length < 3) continue;
+      var date = parseBSPDate(cols[dateIdx]);
+      var desc = cols[descIdx] || '';
+      var credit = parseFloat(cols[creditIdx]) || 0;
+      var debit = parseFloat(cols[debitIdx]) || 0;
+      if (credit === 0 && debit === 0) continue;
+      var type = credit > 0 ? 'income' : 'expense';
+      var amount = credit > 0 ? credit : debit;
+      var ac = autoCategory(desc, type);
+      importedRows.push({
+        id: String(Date.now()) + String(i),
+        date: date,
+        desc: desc,
+        type: type,
+        amount: amount,
+        category: ac.cat,
+        subcategory: ac.sub,
+        method: 'bank',
+        skip: false
+      });
+    }
+    renderPreview();
+  };
+  reader.readAsText(file);
+}
+
+function renderPreview() {
+  var el = document.getElementById('import-preview');
+  if (!importedRows.length) { el.innerHTML = '<p style="color:var(--text2);font-size:13px;margin-top:12px">No transactions found in file.</p>'; return; }
+  var expCats = Object.keys(CATS.expense);
+  var incCats = Object.keys(CATS.income);
+  var rows = importedRows.map(function(r, i) {
+    var cats = r.type === 'income' ? incCats : expCats;
+    var catOpts = cats.map(function(c) { return '<option value="' + c + '"' + (c === r.category ? ' selected' : '') + '>' + c + '</option>'; }).join('');
+    var typeOpts = '<option value="expense"' + (r.type==='expense'?' selected':'') + '>Expense</option><option value="income"' + (r.type==='income'?' selected':'') + '>Income</option>';
+    return '<tr class="' + (r.skip ? 'skip-row' : '') + '" id="irow-' + i + '">' +
+      '<td><input type="checkbox"' + (!r.skip ? ' checked' : '') + ' onchange="toggleSkip(' + i + ',this.checked)" style="width:auto;padding:0"></td>' +
+      '<td>' + r.date + '</td>' +
+      '<td style="color:var(--text2)">' + r.desc + '</td>' +
+      '<td><select onchange="changeType(' + i + ',this.value)" style="font-size:12px;padding:4px 6px">' + typeOpts + '</select></td>' +
+      '<td><select onchange="changeCat(' + i + ',this.value)" style="font-size:12px;padding:4px 6px">' + catOpts + '</select></td>' +
+      '<td style="text-align:right;font-weight:500;color:' + (r.type==='income'?'var(--green)':'var(--red)') + '">K' + r.amount.toFixed(2) + '</td>' +
+      '</tr>';
+  }).join('');
+  var active = importedRows.filter(function(r) { return !r.skip; }).length;
+  el.innerHTML = '<div style="overflow-x:auto"><table class="preview-table"><thead><tr><th style="width:36px"></th><th style="width:90px">Date</th><th>Description</th><th style="width:90px">Type</th><th style="width:130px">Category</th><th style="width:90px;text-align:right">Amount</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+    '<div class="import-actions"><button class="btn" onclick="confirmImport()" id="import-btn">Import ' + active + ' transactions</button><button class="btn-ghost" onclick="resetImport()">Cancel</button><span class="import-summary" id="import-summary"></span></div>';
+}
+
+function toggleSkip(i, checked) {
+  importedRows[i].skip = !checked;
+  var row = document.getElementById('irow-' + i);
+  if (row) row.className = importedRows[i].skip ? 'skip-row' : '';
+  var active = importedRows.filter(function(r) { return !r.skip; }).length;
+  var btn = document.getElementById('import-btn');
+  if (btn) btn.textContent = 'Import ' + active + ' transactions';
+}
+
+function changeType(i, val) {
+  importedRows[i].type = val;
+  var ac = autoCategory(importedRows[i].desc, val);
+  importedRows[i].category = ac.cat;
+  importedRows[i].subcategory = ac.sub;
+  renderPreview();
+}
+
+function changeCat(i, val) {
+  importedRows[i].category = val;
+  var subs = (CATS[importedRows[i].type] || {})[val] || ['Other'];
+  importedRows[i].subcategory = subs[0];
+}
+
+function confirmImport() {
+  var toImport = importedRows.filter(function(r) { return !r.skip; });
+  if (!toImport.length) return;
+  var btn = document.getElementById('import-btn');
+  var summary = document.getElementById('import-summary');
+  btn.disabled = true;
+  btn.textContent = 'Importing...';
+  setSyncStatus('loading', 'Importing...');
+  var chain = Promise.resolve();
+  var count = 0;
+  toImport.forEach(function(t) {
+    chain = chain.then(function() {
+      return fetch(API, {method:'POST', body: JSON.stringify({action:'add', transaction:t})})
+        .then(function(r) { return r.json(); })
+        .then(function(j) { if (j.ok) { txns.push(t); count++; } });
+    });
+  });
+  chain.then(function() {
+    setSyncStatus('ok', 'Synced');
+    summary.style.color = 'var(--green)';
+    summary.textContent = count + ' transactions imported successfully!';
+    btn.disabled = false;
+    btn.textContent = 'Done';
+    importedRows = [];
+    pms(); rd(); populateYears();
+  }).catch(function() {
+    setSyncStatus('err', 'Error');
+    summary.style.color = 'var(--red)';
+    summary.textContent = 'Error during import. Please try again.';
+    btn.disabled = false;
+    btn.textContent = 'Retry';
+  });
+}
+
+function resetImport() {
+  importedRows = [];
+  document.getElementById('import-preview').innerHTML = '';
+  document.getElementById('csv-file').value = '';
+}
+
+function fmt(n) { return 'K' + Math.abs(n).toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}); }
+function setSyncStatus(s, m) { document.getElementById('sdot').className = 'sync-dot ' + s; document.getElementById('slabel').textContent = m; }
 
 function loadFromSheets() {
   setSyncStatus('loading', 'Syncing...');
@@ -215,14 +410,10 @@ function loadFromSheets() {
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (j.ok) {
-        txns = j.data.map(function(r) {
-          return Object.assign({}, r, {amount: parseFloat(r.amount) || 0, id: String(r.id)});
-        });
+        txns = j.data.map(function(r) { return Object.assign({}, r, {amount: parseFloat(r.amount)||0, id: String(r.id)}); });
         setSyncStatus('ok', 'Synced');
         pms(); rd(); rt(); populateYears(); ry();
-      } else {
-        setSyncStatus('err', 'Sync error');
-      }
+      } else { setSyncStatus('err', 'Sync error'); }
     })
     .catch(function() { setSyncStatus('err', 'Offline'); });
 }
@@ -232,261 +423,109 @@ function addTxn() {
   var amount = parseFloat(document.getElementById('fa').value);
   var msg = document.getElementById('amsg');
   var btn = document.getElementById('addbtn');
-  if (!date || !amount || amount <= 0) {
-    msg.style.color = 'var(--red)';
-    msg.textContent = 'Please fill in date and a valid amount.';
-    return;
-  }
-  var t = {
-    id: String(Date.now()),
-    date: date,
-    type: document.getElementById('ft').value,
-    category: document.getElementById('fcat').value,
-    subcategory: document.getElementById('fsub').value,
-    amount: amount,
-    method: document.getElementById('fm').value,
-    desc: document.getElementById('fdesc').value.trim()
-  };
-  btn.disabled = true;
-  btn.textContent = 'Saving...';
-  setSyncStatus('loading', 'Saving...');
-  fetch(API, {method: 'POST', body: JSON.stringify({action: 'add', transaction: t})})
+  if (!date || !amount || amount <= 0) { msg.style.color='var(--red)'; msg.textContent='Please fill in date and a valid amount.'; return; }
+  var t = {id:String(Date.now()), date:date, type:document.getElementById('ft').value, category:document.getElementById('fcat').value, subcategory:document.getElementById('fsub').value, amount:amount, method:document.getElementById('fm').value, desc:document.getElementById('fdesc').value.trim()};
+  btn.disabled=true; btn.textContent='Saving...'; setSyncStatus('loading','Saving...');
+  fetch(API, {method:'POST', body:JSON.stringify({action:'add', transaction:t})})
     .then(function(r) { return r.json(); })
     .then(function(j) {
       if (j.ok) {
         txns.push(t);
-        document.getElementById('fa').value = '';
-        document.getElementById('fdesc').value = '';
-        msg.style.color = 'var(--green)';
-        msg.textContent = 'Saved to Google Sheets!';
-        setTimeout(function() { msg.textContent = ''; }, 3000);
-        setSyncStatus('ok', 'Synced');
-        pms(); rd(); populateYears();
-      } else {
-        msg.style.color = 'var(--red)';
-        msg.textContent = 'Error saving.';
-        setSyncStatus('err', 'Error');
-      }
-      btn.disabled = false;
-      btn.textContent = 'Add transaction';
+        document.getElementById('fa').value=''; document.getElementById('fdesc').value='';
+        msg.style.color='var(--green)'; msg.textContent='Saved to Google Sheets!';
+        setTimeout(function() { msg.textContent=''; }, 3000);
+        setSyncStatus('ok','Synced'); pms(); rd(); populateYears();
+      } else { msg.style.color='var(--red)'; msg.textContent='Error saving.'; setSyncStatus('err','Error'); }
+      btn.disabled=false; btn.textContent='Add transaction';
     })
-    .catch(function() {
-      msg.style.color = 'var(--red)';
-      msg.textContent = 'Network error.';
-      setSyncStatus('err', 'Offline');
-      btn.disabled = false;
-      btn.textContent = 'Add transaction';
-    });
+    .catch(function() { msg.style.color='var(--red)'; msg.textContent='Network error.'; setSyncStatus('err','Offline'); btn.disabled=false; btn.textContent='Add transaction'; });
 }
 
 function deleteTxn(id) {
   if (!confirm('Delete this transaction?')) return;
-  setSyncStatus('loading', 'Deleting...');
-  fetch(API, {method: 'POST', body: JSON.stringify({action: 'delete', id: String(id)})})
+  setSyncStatus('loading','Deleting...');
+  fetch(API, {method:'POST', body:JSON.stringify({action:'delete', id:String(id)})})
     .then(function(r) { return r.json(); })
-    .then(function(j) {
-      if (j.ok) {
-        txns = txns.filter(function(t) { return String(t.id) !== String(id); });
-        setSyncStatus('ok', 'Synced');
-        rt(); rd();
-      } else {
-        setSyncStatus('err', 'Error');
-      }
-    })
-    .catch(function() { setSyncStatus('err', 'Offline'); });
+    .then(function(j) { if (j.ok) { txns=txns.filter(function(t){return String(t.id)!==String(id);}); setSyncStatus('ok','Synced'); rt(); rd(); } else setSyncStatus('err','Error'); })
+    .catch(function() { setSyncStatus('err','Offline'); });
 }
 
-function getMonths() {
-  var s = {};
-  txns.forEach(function(t) { s[t.date.slice(0,7)] = true; });
-  var cur = new Date().toISOString().slice(0,7);
-  s[cur] = true;
-  return Object.keys(s).sort().reverse();
-}
-
-function fmtMonth(m) {
-  var parts = m.split('-');
-  return new Date(parts[0], parts[1]-1, 1).toLocaleString('en-US', {month:'long', year:'numeric'});
-}
+function getMonths() { var s={}; txns.forEach(function(t){s[t.date.slice(0,7)]=true;}); var cur=new Date().toISOString().slice(0,7); s[cur]=true; return Object.keys(s).sort().reverse(); }
+function fmtMonth(m) { var p=m.split('-'); return new Date(p[0],p[1]-1,1).toLocaleString('en-US',{month:'long',year:'numeric'}); }
 
 function pms() {
-  var months = getMonths();
-  ['gm','fm2'].forEach(function(id) {
-    var el = document.getElementById(id);
-    if (!el) return;
-    var p = el.value;
-    el.innerHTML = months.map(function(m) { return '<option value="' + m + '">' + fmtMonth(m) + '</option>'; }).join('');
-    if (months.indexOf(p) >= 0) el.value = p;
-  });
-  var cats = {};
-  txns.forEach(function(t) { cats[t.category] = true; });
-  var ac = Object.keys(cats).sort();
-  var fc = document.getElementById('fc2');
-  if (fc) {
-    var p = fc.value;
-    fc.innerHTML = '<option value="">All categories</option>' + ac.map(function(c) { return '<option value="' + c + '">' + c + '</option>'; }).join('');
-    if (ac.indexOf(p) >= 0) fc.value = p;
-  }
+  var months=getMonths();
+  ['gm','fm2'].forEach(function(id){ var el=document.getElementById(id); if(!el)return; var p=el.value; el.innerHTML=months.map(function(m){return '<option value="'+m+'">'+fmtMonth(m)+'</option>';}).join(''); if(months.indexOf(p)>=0)el.value=p; });
+  var cats={}; txns.forEach(function(t){cats[t.category]=true;}); var ac=Object.keys(cats).sort();
+  var fc=document.getElementById('fc2'); if(fc){ var p=fc.value; fc.innerHTML='<option value="">All categories</option>'+ac.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join(''); if(ac.indexOf(p)>=0)fc.value=p; }
 }
 
-function populateYears() {
-  var yrs = {};
-  txns.forEach(function(t) { yrs[t.date.slice(0,4)] = true; });
-  var cur = String(new Date().getFullYear());
-  yrs[cur] = true;
-  var years = Object.keys(yrs).sort().reverse();
-  var el = document.getElementById('yr-pick');
-  var p = el.value;
-  el.innerHTML = years.map(function(y) { return '<option value="' + y + '">' + y + '</option>'; }).join('');
-  if (years.indexOf(p) >= 0) el.value = p;
-}
-
+function populateYears() { var yrs={}; txns.forEach(function(t){yrs[t.date.slice(0,4)]=true;}); yrs[String(new Date().getFullYear())]=true; var years=Object.keys(yrs).sort().reverse(); var el=document.getElementById('yr-pick'); var p=el.value; el.innerHTML=years.map(function(y){return '<option value="'+y+'">'+y+'</option>';}).join(''); if(years.indexOf(p)>=0)el.value=p; }
 function omc() { rd(); }
-
-function st(t) {
-  var tabs = ['dashboard','add','transactions','yearly'];
-  document.querySelectorAll('.nb').forEach(function(b, i) { b.classList.toggle('active', tabs[i] === t); });
-  document.querySelectorAll('.sec').forEach(function(s) { s.classList.remove('active'); });
-  document.getElementById(t).classList.add('active');
-  if (t === 'dashboard') rd();
-  if (t === 'transactions') { pms(); rt(); }
-  if (t === 'yearly') { populateYears(); ry(); }
-}
-
-function uc() {
-  var tp = document.getElementById('ft').value;
-  document.getElementById('fcat').innerHTML = Object.keys(CATS[tp]).map(function(c) { return '<option>' + c + '</option>'; }).join('');
-  us();
-}
-
-function us() {
-  var tp = document.getElementById('ft').value;
-  var cat = document.getElementById('fcat').value;
-  document.getElementById('fsub').innerHTML = (CATS[tp][cat] || []).map(function(s) { return '<option>' + s + '</option>'; }).join('');
-}
+function st(t) { var tabs=['dashboard','add','transactions','yearly','import']; document.querySelectorAll('.nb').forEach(function(b,i){b.classList.toggle('active',tabs[i]===t);}); document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');}); document.getElementById(t).classList.add('active'); if(t==='dashboard')rd(); if(t==='transactions'){pms();rt();} if(t==='yearly'){populateYears();ry();} }
+function uc() { var tp=document.getElementById('ft').value; document.getElementById('fcat').innerHTML=Object.keys(CATS[tp]).map(function(c){return '<option>'+c+'</option>';}).join(''); us(); }
+function us() { var tp=document.getElementById('ft').value; var cat=document.getElementById('fcat').value; document.getElementById('fsub').innerHTML=(CATS[tp][cat]||[]).map(function(s){return '<option>'+s+'</option>';}).join(''); }
 
 function rt() {
   pms();
-  var month = (document.getElementById('fm2') || {}).value || '';
-  var type = (document.getElementById('ft2') || {}).value || '';
-  var cat = (document.getElementById('fc2') || {}).value || '';
-  var f = txns.filter(function(t) {
-    return (!month || t.date.indexOf(month) === 0) && (!type || t.type === type) && (!cat || t.category === cat);
-  }).sort(function(a,b) { return b.date.localeCompare(a.date); });
-  var el = document.getElementById('tl');
-  if (!f.length) { el.innerHTML = '<div class="empty">No transactions found.</div>'; return; }
-  var ti = f.filter(function(t) { return t.type === 'income'; }).reduce(function(s,t) { return s + t.amount; }, 0);
-  var te = f.filter(function(t) { return t.type === 'expense'; }).reduce(function(s,t) { return s + t.amount; }, 0);
-  var rows = f.map(function(t) {
-    return '<tr><td style="color:var(--text2)">' + t.date + '</td>' +
-      '<td><span class="badge ' + t.type + '">' + t.category + '</span><br><span style="font-size:11px;color:var(--text2)">' + t.subcategory + '</span></td>' +
-      '<td style="color:var(--text2)">' + (t.desc || '--') + '</td>' +
-      '<td><span class="badge ' + t.method + '">' + (t.method === 'bank' ? 'Bank' : 'Cash') + '</span></td>' +
-      '<td style="text-align:right" class="amt ' + t.type + '">' + (t.type === 'income' ? '+' : '-') + fmt(t.amount) + '</td>' +
-      '<td><button class="db" onclick="deleteTxn(' + t.id + ')" title="Delete">x</button></td></tr>';
-  }).join('');
-  el.innerHTML = '<table><thead><tr><th style="width:100px">Date</th><th style="width:150px">Category</th><th>Description</th><th style="width:80px">Method</th><th style="width:110px;text-align:right">Amount</th><th style="width:36px"></th></tr></thead><tbody>' + rows +
-    '<tr style="background:var(--bg2)"><td colspan="4" style="text-align:right;font-weight:500;font-size:12px;color:var(--text2)">Totals</td><td style="text-align:right;font-size:13px"><span class="amt income">+' + fmt(ti) + '</span><br><span class="amt expense">-' + fmt(te) + '</span></td><td></td></tr></tbody></table>';
+  var month=(document.getElementById('fm2')||{}).value||''; var type=(document.getElementById('ft2')||{}).value||''; var cat=(document.getElementById('fc2')||{}).value||'';
+  var f=txns.filter(function(t){return(!month||t.date.indexOf(month)===0)&&(!type||t.type===type)&&(!cat||t.category===cat);}).sort(function(a,b){return b.date.localeCompare(a.date);});
+  var el=document.getElementById('tl');
+  if(!f.length){el.innerHTML='<div class="empty">No transactions found.</div>';return;}
+  var ti=f.filter(function(t){return t.type==='income';}).reduce(function(s,t){return s+t.amount;},0);
+  var te=f.filter(function(t){return t.type==='expense';}).reduce(function(s,t){return s+t.amount;},0);
+  var rows=f.map(function(t){return '<tr><td style="color:var(--text2)">'+t.date+'</td><td><span class="badge '+t.type+'">'+t.category+'</span><br><span style="font-size:11px;color:var(--text2)">'+t.subcategory+'</span></td><td style="color:var(--text2)">'+(t.desc||'--')+'</td><td><span class="badge '+t.method+'">'+(t.method==='bank'?'Bank':'Cash')+'</span></td><td style="text-align:right" class="amt '+t.type+'">'+(t.type==='income'?'+':'-')+fmt(t.amount)+'</td><td><button class="db" onclick="deleteTxn('+t.id+')" title="Delete">x</button></td></tr>';}).join('');
+  el.innerHTML='<table><thead><tr><th style="width:100px">Date</th><th style="width:150px">Category</th><th>Description</th><th style="width:80px">Method</th><th style="width:110px;text-align:right">Amount</th><th style="width:36px"></th></tr></thead><tbody>'+rows+'<tr style="background:var(--bg2)"><td colspan="4" style="text-align:right;font-weight:500;font-size:12px;color:var(--text2)">Totals</td><td style="text-align:right;font-size:13px"><span class="amt income">+'+fmt(ti)+'</span><br><span class="amt expense">-'+fmt(te)+'</span></td><td></td></tr></tbody></table>';
 }
 
 function rd() {
   pms();
-  var month = (document.getElementById('gm') || {}).value || '';
-  var f = txns.filter(function(t) { return !month || t.date.indexOf(month) === 0; });
-  var inc = f.filter(function(t) { return t.type === 'income'; }).reduce(function(s,t) { return s+t.amount; }, 0);
-  var exp = f.filter(function(t) { return t.type === 'expense'; }).reduce(function(s,t) { return s+t.amount; }, 0);
-  var net = inc - exp;
-  document.getElementById('mi').textContent = fmt(inc);
-  document.getElementById('me').textContent = fmt(exp);
-  var ne = document.getElementById('mn');
-  ne.textContent = (net < 0 ? '-' : '') + fmt(net);
-  ne.className = 'mv ' + (net >= 0 ? 'pos' : 'neg');
-  var months = getMonths().slice(0,6).reverse();
-  var bI = months.map(function(m) { return txns.filter(function(t) { return t.date.indexOf(m)===0 && t.type==='income'; }).reduce(function(s,t) { return s+t.amount; },0); });
-  var bE = months.map(function(m) { return txns.filter(function(t) { return t.date.indexOf(m)===0 && t.type==='expense'; }).reduce(function(s,t) { return s+t.amount; },0); });
-  var bL = months.map(function(m) { var p=m.split('-'); return new Date(p[0],p[1]-1,1).toLocaleString('en-US',{month:'short'}); });
-  if (bC) bC.destroy();
-  bC = new Chart(document.getElementById('bc'), {
-    type: 'bar',
-    data: {labels: bL, datasets: [{label:'Income',data:bI,backgroundColor:'#1D9E75',borderRadius:4},{label:'Expenses',data:bE,backgroundColor:'#D85A30',borderRadius:4}]},
-    options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:function(v){return 'K'+v.toLocaleString();},font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}
-  });
-  var cm = {};
-  f.filter(function(t) { return t.type==='expense'; }).forEach(function(t) { cm[t.category] = (cm[t.category]||0) + t.amount; });
-  var cl = Object.keys(cm);
-  var cv = cl.map(function(c) { return cm[c]; });
-  document.getElementById('pl').innerHTML = cl.length ? cl.map(function(c,i) { return '<div class="li"><div class="sw" style="background:' + PC[i%PC.length] + '"></div>' + c + ' ' + fmt(cv[i]) + '</div>'; }).join('') : '<span style="font-size:12px;color:var(--text2)">No expense data yet</span>';
-  if (pC) pC.destroy();
-  pC = new Chart(document.getElementById('pc'), {
-    type: 'doughnut',
-    data: {labels:cl, datasets:[{data:cv,backgroundColor:PC,borderWidth:2,borderColor:'transparent'}]},
-    options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}
-  });
-  var m12 = getMonths().slice(0,12).reverse();
-  var lN = m12.map(function(m) {
-    var i = txns.filter(function(t) { return t.date.indexOf(m)===0 && t.type==='income'; }).reduce(function(s,t) { return s+t.amount; },0);
-    var e = txns.filter(function(t) { return t.date.indexOf(m)===0 && t.type==='expense'; }).reduce(function(s,t) { return s+t.amount; },0);
-    return i - e;
-  });
-  var lL = m12.map(function(m) { var p=m.split('-'); return new Date(p[0],p[1]-1,1).toLocaleString('en-US',{month:'short',year:'2-digit'}); });
-  if (lC) lC.destroy();
-  lC = new Chart(document.getElementById('lc'), {
-    type: 'line',
-    data: {labels:lL, datasets:[{label:'Net',data:lN,borderColor:'#3266ad',backgroundColor:'rgba(50,102,173,0.07)',tension:.35,fill:true,pointRadius:4,pointBackgroundColor:'#3266ad'}]},
-    options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{ticks:{callback:function(v){return (v<0?'-':'')+'K'+Math.abs(v).toLocaleString();},font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}
-  });
+  var month=(document.getElementById('gm')||{}).value||'';
+  var f=txns.filter(function(t){return !month||t.date.indexOf(month)===0;});
+  var inc=f.filter(function(t){return t.type==='income';}).reduce(function(s,t){return s+t.amount;},0);
+  var exp=f.filter(function(t){return t.type==='expense';}).reduce(function(s,t){return s+t.amount;},0);
+  var net=inc-exp;
+  document.getElementById('mi').textContent=fmt(inc); document.getElementById('me').textContent=fmt(exp);
+  var ne=document.getElementById('mn'); ne.textContent=(net<0?'-':'')+fmt(net); ne.className='mv '+(net>=0?'pos':'neg');
+  var m6=getMonths().slice(0,6).reverse();
+  var bI=m6.map(function(m){return txns.filter(function(t){return t.date.indexOf(m)===0&&t.type==='income';}).reduce(function(s,t){return s+t.amount;},0);});
+  var bE=m6.map(function(m){return txns.filter(function(t){return t.date.indexOf(m)===0&&t.type==='expense';}).reduce(function(s,t){return s+t.amount;},0);});
+  var bL=m6.map(function(m){var p=m.split('-');return new Date(p[0],p[1]-1,1).toLocaleString('en-US',{month:'short'});});
+  if(bC)bC.destroy();
+  bC=new Chart(document.getElementById('bc'),{type:'bar',data:{labels:bL,datasets:[{label:'Income',data:bI,backgroundColor:'#1D9E75',borderRadius:4},{label:'Expenses',data:bE,backgroundColor:'#D85A30',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:function(v){return 'K'+v.toLocaleString();},font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}});
+  var cm={}; f.filter(function(t){return t.type==='expense';}).forEach(function(t){cm[t.category]=(cm[t.category]||0)+t.amount;});
+  var cl=Object.keys(cm); var cv=cl.map(function(c){return cm[c];});
+  document.getElementById('pl').innerHTML=cl.length?cl.map(function(c,i){return '<div class="li"><div class="sw" style="background:'+PC[i%PC.length]+'"></div>'+c+' '+fmt(cv[i])+'</div>';}).join(''):'<span style="font-size:12px;color:var(--text2)">No expense data yet</span>';
+  if(pC)pC.destroy();
+  pC=new Chart(document.getElementById('pc'),{type:'doughnut',data:{labels:cl,datasets:[{data:cv,backgroundColor:PC,borderWidth:2,borderColor:'transparent'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}});
+  var m12=getMonths().slice(0,12).reverse();
+  var lN=m12.map(function(m){var i=txns.filter(function(t){return t.date.indexOf(m)===0&&t.type==='income';}).reduce(function(s,t){return s+t.amount;},0);var e=txns.filter(function(t){return t.date.indexOf(m)===0&&t.type==='expense';}).reduce(function(s,t){return s+t.amount;},0);return i-e;});
+  var lL=m12.map(function(m){var p=m.split('-');return new Date(p[0],p[1]-1,1).toLocaleString('en-US',{month:'short',year:'2-digit'});});
+  if(lC)lC.destroy();
+  lC=new Chart(document.getElementById('lc'),{type:'line',data:{labels:lL,datasets:[{label:'Net',data:lN,borderColor:'#3266ad',backgroundColor:'rgba(50,102,173,0.07)',tension:.35,fill:true,pointRadius:4,pointBackgroundColor:'#3266ad'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{ticks:{callback:function(v){return (v<0?'-':'')+'K'+Math.abs(v).toLocaleString();},font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}}); 
 }
 
 function ry() {
-  var year = (document.getElementById('yr-pick') || {}).value;
-  if (!year) return;
-  var f = txns.filter(function(t) { return t.date.indexOf(year) === 0; });
-  var inc = f.filter(function(t) { return t.type==='income'; }).reduce(function(s,t) { return s+t.amount; },0);
-  var exp = f.filter(function(t) { return t.type==='expense'; }).reduce(function(s,t) { return s+t.amount; },0);
-  var net = inc - exp;
-  document.getElementById('yr-inc').textContent = fmt(inc);
-  document.getElementById('yr-exp').textContent = fmt(exp);
-  var ne = document.getElementById('yr-net');
-  ne.textContent = (net < 0 ? '-' : '') + fmt(net);
-  ne.className = 'mv ' + (net >= 0 ? 'pos' : 'neg');
-  var mInc = MONTHS.map(function(_,i) {
-    var m = year + '-' + (i+1 < 10 ? '0'+(i+1) : ''+(i+1));
-    return txns.filter(function(t) { return t.date.indexOf(m)===0 && t.type==='income'; }).reduce(function(s,t) { return s+t.amount; },0);
-  });
-  var mExp = MONTHS.map(function(_,i) {
-    var m = year + '-' + (i+1 < 10 ? '0'+(i+1) : ''+(i+1));
-    return txns.filter(function(t) { return t.date.indexOf(m)===0 && t.type==='expense'; }).reduce(function(s,t) { return s+t.amount; },0);
-  });
-  var mNet = mInc.map(function(v,i) { return v - mExp[i]; });
-  if (yrB) yrB.destroy();
-  yrB = new Chart(document.getElementById('yr-bar'), {
-    type: 'bar',
-    data: {labels: MONTHS, datasets: [
-      {label:'Income',data:mInc,backgroundColor:'#1D9E75',borderRadius:3},
-      {label:'Expenses',data:mExp,backgroundColor:'#D85A30',borderRadius:3},
-      {label:'Net',data:mNet,type:'line',borderColor:'#3266ad',backgroundColor:'transparent',tension:.3,pointRadius:3,pointBackgroundColor:'#3266ad'}
-    ]},
-    options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:function(v){return 'K'+v.toLocaleString();},font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}
-  });
-  var cm = {};
-  f.filter(function(t) { return t.type==='expense'; }).forEach(function(t) { cm[t.category] = (cm[t.category]||0) + t.amount; });
-  var cl = Object.keys(cm).sort(function(a,b) { return cm[b]-cm[a]; });
-  var cv = cl.map(function(c) { return cm[c]; });
-  var total = cv.reduce(function(s,v) { return s+v; }, 0);
-  document.getElementById('yr-pie-leg').innerHTML = cl.length ? cl.map(function(c,i) { return '<div class="li"><div class="sw" style="background:' + PC[i%PC.length] + '"></div>' + c + ' ' + fmt(cv[i]) + '</div>'; }).join('') : '<span style="font-size:12px;color:var(--text2)">No expense data</span>';
-  if (yrP) yrP.destroy();
-  yrP = new Chart(document.getElementById('yr-pie'), {
-    type: 'doughnut',
-    data: {labels:cl, datasets:[{data:cv,backgroundColor:PC,borderWidth:2,borderColor:'transparent'}]},
-    options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}
-  });
-  var catEl = document.getElementById('yr-cat-table');
-  if (!cl.length) { catEl.innerHTML = '<div class="empty">No expense data</div>'; return; }
-  var tableRows = cl.map(function(c,i) {
-    var pct = total > 0 ? ((cm[c]/total)*100).toFixed(1) : 0;
-    return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:' + PC[i%PC.length] + ';margin-right:6px"></span>' + c + '</td><td style="text-align:right;color:var(--red);font-weight:500">' + fmt(cm[c]) + '</td><td style="text-align:right;color:var(--text2)">' + pct + '%</td></tr>';
-  }).join('');
-  catEl.innerHTML = '<table class="cat-table"><thead><tr><th>Category</th><th style="text-align:right">Total</th><th style="text-align:right">Share</th></tr></thead><tbody>' + tableRows + '</tbody></table>';
+  var year=(document.getElementById('yr-pick')||{}).value; if(!year)return;
+  var f=txns.filter(function(t){return t.date.indexOf(year)===0;});
+  var inc=f.filter(function(t){return t.type==='income';}).reduce(function(s,t){return s+t.amount;},0);
+  var exp=f.filter(function(t){return t.type==='expense';}).reduce(function(s,t){return s+t.amount;},0);
+  var net=inc-exp;
+  document.getElementById('yr-inc').textContent=fmt(inc); document.getElementById('yr-exp').textContent=fmt(exp);
+  var ne=document.getElementById('yr-net'); ne.textContent=(net<0?'-':'')+fmt(net); ne.className='mv '+(net>=0?'pos':'neg');
+  var mInc=MONTHS.map(function(_,i){var m=year+'-'+(i+1<10?'0'+(i+1):''+(i+1));return txns.filter(function(t){return t.date.indexOf(m)===0&&t.type==='income';}).reduce(function(s,t){return s+t.amount;},0);});
+  var mExp=MONTHS.map(function(_,i){var m=year+'-'+(i+1<10?'0'+(i+1):''+(i+1));return txns.filter(function(t){return t.date.indexOf(m)===0&&t.type==='expense';}).reduce(function(s,t){return s+t.amount;},0);});
+  var mNet=mInc.map(function(v,i){return v-mExp[i];});
+  if(yrB)yrB.destroy();
+  yrB=new Chart(document.getElementById('yr-bar'),{type:'bar',data:{labels:MONTHS,datasets:[{label:'Income',data:mInc,backgroundColor:'#1D9E75',borderRadius:3},{label:'Expenses',data:mExp,backgroundColor:'#D85A30',borderRadius:3},{label:'Net',data:mNet,type:'line',borderColor:'#3266ad',backgroundColor:'transparent',tension:.3,pointRadius:3,pointBackgroundColor:'#3266ad'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false}},y:{ticks:{callback:function(v){return 'K'+v.toLocaleString();},font:{size:11}},grid:{color:'rgba(128,128,128,0.1)'}}}}});
+  var cm={}; f.filter(function(t){return t.type==='expense';}).forEach(function(t){cm[t.category]=(cm[t.category]||0)+t.amount;});
+  var cl=Object.keys(cm).sort(function(a,b){return cm[b]-cm[a];}); var cv=cl.map(function(c){return cm[c];}); var total=cv.reduce(function(s,v){return s+v;},0);
+  document.getElementById('yr-pie-leg').innerHTML=cl.length?cl.map(function(c,i){return '<div class="li"><div class="sw" style="background:'+PC[i%PC.length]+'"></div>'+c+' '+fmt(cv[i])+'</div>';}).join(''):'<span style="font-size:12px;color:var(--text2)">No expense data</span>';
+  if(yrP)yrP.destroy();
+  yrP=new Chart(document.getElementById('yr-pie'),{type:'doughnut',data:{labels:cl,datasets:[{data:cv,backgroundColor:PC,borderWidth:2,borderColor:'transparent'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'60%'}});
+  var catEl=document.getElementById('yr-cat-table');
+  if(!cl.length){catEl.innerHTML='<div class="empty">No expense data</div>';return;}
+  catEl.innerHTML='<table class="cat-table"><thead><tr><th>Category</th><th style="text-align:right">Total</th><th style="text-align:right">Share</th></tr></thead><tbody>'+cl.map(function(c,i){var pct=total>0?((cm[c]/total)*100).toFixed(1):0;return '<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+PC[i%PC.length]+';margin-right:6px"></span>'+c+'</td><td style="text-align:right;color:var(--red);font-weight:500">'+fmt(cm[c])+'</td><td style="text-align:right;color:var(--text2)">'+pct+'%</td></tr>';}).join('')+'</tbody></table>';
 }
 
 document.getElementById('fd').value = new Date().toISOString().slice(0,10);
