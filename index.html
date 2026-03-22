@@ -155,6 +155,12 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
 .budget-input-wrap{display:flex;align-items:center;gap:6px}
 .budget-input-wrap span{font-size:13px;color:var(--text2)}
 .budget-input-wrap input{width:100px;text-align:right}
+.export-preview-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:12px}
+.export-preview-table th{background:var(--bg2);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);padding:8px 10px;text-align:left;border-bottom:0.5px solid var(--border)}
+.export-preview-table td{padding:8px 10px;border-bottom:0.5px solid var(--border);color:var(--text)}
+.export-preview-table tr:last-child td{border-bottom:none}
+.export-stat{display:inline-block;background:var(--bg2);border-radius:var(--r);padding:8px 14px;font-size:13px;margin-right:8px;margin-bottom:8px}
+.export-stat span{font-weight:500;color:var(--text)}
 @media(max-width:640px){
   .cgrid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr}.metric{padding:12px}.mv{font-size:20px}
   .fg{grid-template-columns:1fr}.fgi.full{grid-column:1}main{padding:12px}
@@ -225,6 +231,7 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
       <button class="nb" onclick="st('import')">Import CSV</button>
       <button class="nb" onclick="st('reconcile')">Reconcile</button>
       <button class="nb" onclick="st('budgets')">Budgets</button>
+      <button class="nb" onclick="st('export')">Export</button>
     </nav>
     <main>
 
@@ -354,6 +361,45 @@ tbody tr{transition:background 0.15s ease}tbody tr:hover{background:var(--bg2)}
           <div id="budget-form"></div>
           <button class="btn" onclick="saveBudgets()" style="margin-top:20px">Save budgets</button>
           <div class="smsg" id="budget-msg"></div>
+        </div>
+      </div>
+
+      <div id="export" class="sec">
+        <p class="sh">Export data</p>
+        <div class="fc" style="max-width:600px">
+          <p style="font-size:13px;color:var(--text2);margin-bottom:20px">Download your transactions as a CSV or a PDF report.</p>
+          <div class="fg">
+            <div class="fgi">
+              <label class="fl">Period</label>
+              <select id="export-period" onchange="updateExportFilter()">
+                <option value="month">By month</option>
+                <option value="year">By year</option>
+                <option value="all">All transactions</option>
+              </select>
+            </div>
+            <div class="fgi" id="export-month-wrap">
+              <label class="fl">Month</label>
+              <select id="export-month"></select>
+            </div>
+            <div class="fgi" id="export-year-wrap" style="display:none">
+              <label class="fl">Year</label>
+              <select id="export-year"></select>
+            </div>
+            <div class="fgi">
+              <label class="fl">Type</label>
+              <select id="export-type">
+                <option value="">All types</option>
+                <option value="income">Income only</option>
+                <option value="expense">Expenses only</option>
+              </select>
+            </div>
+          </div>
+          <div id="export-preview" style="margin-bottom:20px"></div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <button class="btn" onclick="exportCSV()">Download CSV</button>
+            <button class="btn-ghost" onclick="exportPDF()">Download PDF report</button>
+          </div>
+          <div class="smsg" id="export-msg"></div>
         </div>
       </div>
 
@@ -794,7 +840,7 @@ function setDashView(view){
 }
 
 function st(tab){
-  var tabs=['dashboard','add','transactions','import','reconcile','budgets'];
+  var tabs=['dashboard','add','transactions','import','reconcile','budgets','export'];
   var btns=document.querySelectorAll('.nb');
   for(var i=0;i<btns.length;i++)btns[i].classList.toggle('active',tabs[i]===tab);
   var secs=document.querySelectorAll('.sec');
@@ -803,6 +849,7 @@ function st(tab){
   if(tab==='dashboard') rd();
   if(tab==='transactions'){pms();rt();}
   if(tab==='budgets') renderBudgetForm();
+  if(tab==='export') { populateExportFilters(); }
 }
 
 function uc(){var tp=document.getElementById('ft').value;var html='';var keys=Object.keys(CATS[tp]);for(var i=0;i<keys.length;i++)html+='<option>'+keys[i]+'</option>';document.getElementById('fcat').innerHTML=html;us();}
@@ -893,6 +940,124 @@ function ry(){
   var trows='';
   for(var tr=0;tr<cl.length;tr++){var pct=total>0?((cm[cl[tr]]/total)*100).toFixed(1):0;trows+='<tr><td><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+PC[tr%PC.length]+';margin-right:6px"></span>'+cl[tr]+'</td><td style="text-align:right;color:var(--red);font-weight:500">'+fmt(cm[cl[tr]])+'</td><td style="text-align:right;color:var(--text2)">'+pct+'%</td></tr>';}
   catEl.innerHTML='<table class="cat-table"><thead><tr><th>Category</th><th style="text-align:right">Total</th><th style="text-align:right">Share</th></tr></thead><tbody>'+trows+'</tbody></table>';
+}
+
+function getExportTxns() {
+  var period = document.getElementById('export-period').value;
+  var type = document.getElementById('export-type').value;
+  var f = [];
+  for (var i = 0; i < txns.length; i++) {
+    var t = txns[i];
+    if (period === 'month') {
+      var month = document.getElementById('export-month').value;
+      if (t.date.indexOf(month) !== 0) continue;
+    } else if (period === 'year') {
+      var year = document.getElementById('export-year').value;
+      if (t.date.indexOf(year) !== 0) continue;
+    }
+    if (type && t.type !== type) continue;
+    f.push(t);
+  }
+  f.sort(function(a,b) { return a.date.localeCompare(b.date); });
+  return f;
+}
+
+function updateExportFilter() {
+  var period = document.getElementById('export-period').value;
+  document.getElementById('export-month-wrap').style.display = period === 'month' ? 'flex' : 'none';
+  document.getElementById('export-year-wrap').style.display = period === 'year' ? 'flex' : 'none';
+  updateExportPreview();
+}
+
+function updateExportPreview() {
+  var f = getExportTxns();
+  var el = document.getElementById('export-preview');
+  if (!f.length) { el.innerHTML = '<p style="font-size:13px;color:var(--text2);margin-top:12px">No transactions found for this filter.</p>'; return; }
+  var inc = 0; var exp = 0;
+  for (var i = 0; i < f.length; i++) { if (f[i].type === 'income') inc += f[i].amount; else exp += f[i].amount; }
+  var net = inc - exp;
+  el.innerHTML = '<div style="margin-bottom:12px">' +
+    '<div class="export-stat">Transactions <span>' + f.length + '</span></div>' +
+    '<div class="export-stat">Income <span style="color:var(--green)">' + fmt(inc) + '</span></div>' +
+    '<div class="export-stat">Expenses <span style="color:var(--red)">' + fmt(exp) + '</span></div>' +
+    '<div class="export-stat">Net <span style="color:' + (net>=0?'var(--green)':'var(--red)') + '">' + (net<0?'-':'') + fmt(net) + '</span></div>' +
+    '</div>';
+}
+
+function populateExportFilters() {
+  var months = getMonths();
+  var monthEl = document.getElementById('export-month');
+  if (monthEl) { monthEl.innerHTML = months.map(function(m) { return '<option value="' + m + '">' + fmtMonth(m) + '</option>'; }).join(''); }
+  var yrs = {};
+  for (var i = 0; i < txns.length; i++) yrs[txns[i].date.slice(0,4)] = true;
+  yrs[String(new Date().getFullYear())] = true;
+  var years = Object.keys(yrs).sort().reverse();
+  var yearEl = document.getElementById('export-year');
+  if (yearEl) { yearEl.innerHTML = years.map(function(y) { return '<option value="' + y + '">' + y + '</option>'; }).join(''); }
+  updateExportPreview();
+}
+
+function exportCSV() {
+  var f = getExportTxns();
+  if (!f.length) { document.getElementById('export-msg').style.color = 'var(--red)'; document.getElementById('export-msg').textContent = 'No transactions to export.'; return; }
+  var header = 'Date,Type,Category,Subcategory,Amount,Method,Description\n';
+  var rows = f.map(function(t) {
+    return [t.date, t.type, t.category, t.subcategory, t.amount.toFixed(2), t.method, '"' + (t.desc||'').replace(/"/g,'""') + '"'].join(',');
+  }).join('\n');
+  var csv = header + rows;
+  var blob = new Blob([csv], {type:'text/csv'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  var period = document.getElementById('export-period').value;
+  var label = period === 'month' ? document.getElementById('export-month').value : period === 'year' ? document.getElementById('export-year').value : 'all';
+  a.download = 'transactions-' + label + '.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function exportPDF() {
+  var f = getExportTxns();
+  if (!f.length) { document.getElementById('export-msg').style.color = 'var(--red)'; document.getElementById('export-msg').textContent = 'No transactions to export.'; return; }
+  var inc = 0; var exp = 0;
+  for (var i = 0; i < f.length; i++) { if (f[i].type === 'income') inc += f[i].amount; else exp += f[i].amount; }
+  var net = inc - exp;
+  var period = document.getElementById('export-period').value;
+  var label = period === 'month' ? fmtMonth(document.getElementById('export-month').value) : period === 'year' ? document.getElementById('export-year').value : 'All transactions';
+  var rows = f.map(function(t) {
+    return '<tr>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:12px">' + t.date + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:12px">' + t.category + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:12px">' + (t.desc||t.subcategory) + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:12px">' + t.method + '</td>' +
+      '<td style="padding:6px 8px;border-bottom:1px solid #eee;font-size:12px;text-align:right;color:' + (t.type==='income'?'#1D9E5B':'#D85A30') + '">' + (t.type==='income'?'+':'-') + fmt(t.amount) + '</td>' +
+      '</tr>';
+  }).join('');
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Financial Report — ' + label + '</title>' +
+    '<style>body{font-family:-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;color:#1a1a18;padding:40px;max-width:900px;margin:0 auto}' +
+    'h1{font-size:22px;font-weight:500;margin-bottom:4px}' +
+    '.sub{font-size:13px;color:#6b6b67;margin-bottom:24px}' +
+    '.stats{display:flex;gap:16px;margin-bottom:28px;flex-wrap:wrap}' +
+    '.stat{background:#f5f5f3;border-radius:8px;padding:12px 16px;min-width:120px}' +
+    '.stat-label{font-size:11px;color:#6b6b67;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}' +
+    '.stat-val{font-size:20px;font-weight:500}' +
+    'table{width:100%;border-collapse:collapse}' +
+    'thead th{background:#f5f5f3;font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;color:#6b6b67;padding:8px;text-align:left;border-bottom:1px solid #eee}' +
+    '</style></head><body>' +
+    '<h1>My Financial Tracker</h1>' +
+    '<div class="sub">Report for ' + label + ' — exported ' + new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}) + '</div>' +
+    '<div class="stats">' +
+    '<div class="stat"><div class="stat-label">Transactions</div><div class="stat-val">' + f.length + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Income</div><div class="stat-val" style="color:#1D9E5B">' + fmt(inc) + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Expenses</div><div class="stat-val" style="color:#D85A30">' + fmt(exp) + '</div></div>' +
+    '<div class="stat"><div class="stat-label">Net</div><div class="stat-val" style="color:' + (net>=0?'#1D9E5B':'#D85A30') + '">' + (net<0?'-':'') + fmt(net) + '</div></div>' +
+    '</div>' +
+    '<table><thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Method</th><th style="text-align:right">Amount</th></tr></thead>' +
+    '<tbody>' + rows + '</tbody></table>' +
+    '</body></html>';
+  var win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(function() { win.print(); }, 500);
 }
 
 document.getElementById('fd').value=new Date().toISOString().slice(0,10);
