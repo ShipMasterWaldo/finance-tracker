@@ -161,17 +161,20 @@ tbody tr:hover{background:var(--bg2)}
 
 @media(max-width:640px){
   .cgrid{grid-template-columns:1fr}
-  .metrics{grid-template-columns:1fr}
+  .metrics{grid-template-columns:1fr 1fr}
+  .metric{padding:12px}
+  .mv{font-size:20px}
   .fg{grid-template-columns:1fr}
   .fgi.full{grid-column:1}
-  main{padding:16px}
+  main{padding:12px}
   .logo{font-size:13px}
   .logo img{height:22px;width:22px}
   .sync-label{display:none}
   header{padding:0 12px}
   .recon-summary{grid-template-columns:1fr 1fr}
   .dash-header{flex-direction:column;align-items:flex-start}
-  table{min-width:500px}
+  .cc{padding:14px}
+  .fc{padding:16px}
 }
 </style>
 </head>
@@ -789,25 +792,54 @@ function rt() {
   if (!f.length) { el.innerHTML = '<div class="empty">No transactions found.</div>'; return; }
   var ti = 0; var te = 0;
   for (var j = 0; j < f.length; j++) { if (f[j].type === 'income') ti += f[j].amount; else te += f[j].amount; }
-  var rows = '';
-  for (var k = 0; k < f.length; k++) {
-    var r = f[k];
-    rows += '<tr>' +
-      '<td style="color:var(--text2)">' + r.date + '</td>' +
-      '<td><span class="badge ' + r.type + '">' + r.category + '</span><br><span style="font-size:11px;color:var(--text2)">' + r.subcategory + '</span></td>' +
-      '<td style="color:var(--text2)">' + (r.desc || '--') + '</td>' +
-      '<td><span class="badge ' + r.method + '">' + (r.method === 'bank' ? 'Bank' : 'Cash') + '</span></td>' +
-      '<td style="text-align:right" class="amt ' + r.type + '">' + (r.type === 'income' ? '+' : '-') + fmt(r.amount) + '</td>' +
-      '<td><button class="db" onclick="deleteTxn(' + r.id + ')" title="Delete">x</button></td>' +
-      '</tr>';
+
+  var isMobile = window.innerWidth <= 640;
+
+  if (isMobile) {
+    var cards = '';
+    for (var k = 0; k < f.length; k++) {
+      var r = f[k];
+      cards += '<div style="padding:12px 16px;border-bottom:0.5px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start;gap:8px">' +
+        '<div style="flex:1;min-width:0">' +
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
+        '<span class="badge ' + r.type + '">' + r.category + '</span>' +
+        '<span class="badge ' + r.method + '" style="font-size:10px">' + (r.method === 'bank' ? 'Bank' : 'Cash') + '</span>' +
+        '</div>' +
+        '<div style="font-size:12px;color:var(--text2);margin-bottom:2px">' + (r.desc || r.subcategory) + '</div>' +
+        '<div style="font-size:11px;color:var(--text3)">' + r.date + '</div>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0">' +
+        '<span class="amt ' + r.type + '" style="font-size:14px;font-weight:500">' + (r.type === 'income' ? '+' : '-') + fmt(r.amount) + '</span>' +
+        '<button class="db" onclick="deleteTxn(' + r.id + ')" title="Delete">x</button>' +
+        '</div>' +
+        '</div>';
+    }
+    cards += '<div style="padding:12px 16px;background:var(--bg2);display:flex;justify-content:space-between;align-items:center">' +
+      '<span style="font-size:12px;color:var(--text2);font-weight:500">Totals</span>' +
+      '<div style="text-align:right;font-size:13px"><span class="amt income">+' + fmt(ti) + '</span><br><span class="amt expense">-' + fmt(te) + '</span></div>' +
+      '</div>';
+    el.innerHTML = cards;
+  } else {
+    var rows = '';
+    for (var k2 = 0; k2 < f.length; k2++) {
+      var r2 = f[k2];
+      rows += '<tr>' +
+        '<td style="color:var(--text2)">' + r2.date + '</td>' +
+        '<td><span class="badge ' + r2.type + '">' + r2.category + '</span><br><span style="font-size:11px;color:var(--text2)">' + r2.subcategory + '</span></td>' +
+        '<td style="color:var(--text2)">' + (r2.desc || '--') + '</td>' +
+        '<td><span class="badge ' + r2.method + '">' + (r2.method === 'bank' ? 'Bank' : 'Cash') + '</span></td>' +
+        '<td style="text-align:right" class="amt ' + r2.type + '">' + (r2.type === 'income' ? '+' : '-') + fmt(r2.amount) + '</td>' +
+        '<td><button class="db" onclick="deleteTxn(' + r2.id + ')" title="Delete">x</button></td>' +
+        '</tr>';
+    }
+    el.innerHTML = '<table><thead><tr>' +
+      '<th style="width:100px">Date</th><th style="width:150px">Category</th><th>Description</th>' +
+      '<th style="width:80px">Method</th><th style="width:110px;text-align:right">Amount</th><th style="width:36px"></th>' +
+      '</tr></thead><tbody>' + rows +
+      '<tr style="background:var(--bg2)"><td colspan="4" style="text-align:right;font-weight:500;font-size:12px;color:var(--text2)">Totals</td>' +
+      '<td style="text-align:right;font-size:13px"><span class="amt income">+' + fmt(ti) + '</span><br><span class="amt expense">-' + fmt(te) + '</span></td><td></td></tr>' +
+      '</tbody></table>';
   }
-  el.innerHTML = '<table><thead><tr>' +
-    '<th style="width:100px">Date</th><th style="width:150px">Category</th><th>Description</th>' +
-    '<th style="width:80px">Method</th><th style="width:110px;text-align:right">Amount</th><th style="width:36px"></th>' +
-    '</tr></thead><tbody>' + rows +
-    '<tr style="background:var(--bg2)"><td colspan="4" style="text-align:right;font-weight:500;font-size:12px;color:var(--text2)">Totals</td>' +
-    '<td style="text-align:right;font-size:13px"><span class="amt income">+' + fmt(ti) + '</span><br><span class="amt expense">-' + fmt(te) + '</span></td><td></td></tr>' +
-    '</tbody></table>';
 }
 
 function rd() {
